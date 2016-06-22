@@ -1,0 +1,50 @@
+---
+# defaults file for arogarth.openvpn
+
+openvpn_server_name: "server"
+openvpn_gw_device: eth0
+openvpn_fqdn: "{{hostvars[inventory_hostname]['ansible_'+openvpn_gw_device]['ipv4']['address']}}"
+openvpn_directory: /etc/openvpn
+
+openvpn_subnet:
+  address: 10.8.0.0
+  netmask: 255.255.255.0
+
+openvpn_keys_directory: "{{ openvpn_directory }}/keys"
+openvpn_config: "{{ openvpn_directory }}/server.conf"
+openvpn_port: 1194
+openvpn_protocol: udp
+
+openvpn_device: tun
+openvpn_device_node: tap0
+
+openvpn_pushes: []
+
+openvpn_c2c: No
+openvpn_comp: Yes
+
+openvpn_keepalive: 10
+openvpn_keepalive_timeout: 120
+
+openvpn_status_log: "openvpn-status.log"
+openvpn_log: "openvpn.log"
+openvpn_log_append: "{{ openvpn_log }}"
+openvpn_log_verb: 3
+
+# openvpn_log_mute: 0
+
+openvpn_clients: []
+
+rsa:
+  key_directory: "{{ openvpn_keys_directory }}"
+  key_country: "DE"
+  key_province: "HE"
+  key_city: "Frankfurt"
+  key_org: "openvpn"
+  key_email: "admin@openvpn.local"
+  key_ou: "OpenVPN Organization Unit"
+  key_name: "EasyRSA"
+  key_cn: "CommonName"
+  key_size: 2048
+  key_expire: 3650
+  ca_expire: 3650

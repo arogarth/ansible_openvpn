@@ -1,0 +1,101 @@
+---
+# tasks file for arogarth.openvpn
+
+# - name: Download OpenVPN
+#   get_url:
+#     url: "{{ openvpn_download_url }}"
+#     dest: /tmp
+#   register: download
+
+- name: Install OpenVPN
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - openvpn
+    - easy-rsa
+    - zip
+    # deb: "{{ download.dest }}"
+
+- name: Create OpenVPN Config
+  template:
+    src: etc/openvpn/server.conf
+    dest: "{{ openvpn_config }}"
+    owner: root
+    group: root
+
+- name: Copy easy-rsa
+  shell:
+    "cp -r /usr/share/easy-rsa {{ openvpn_directory }}"
+  args:
+    creates: "{{ openvpn_directory }}/easy-rsa/vars"
+
+- name: Create EasyRSA vars
+  template:
+    src: etc/openvpn/easy-rsa/vars
+    dest: "{{ openvpn_directory }}/easy-rsa/vars"
+
+- name: "[EasyRSA] clean-all"
+  shell:
+    ". ./vars && ./clean-all"
+  args:
+    chdir: "{{ openvpn_directory }}/easy-rsa"
+    creates: "{{ openvpn_keys_directory }}/serial"
+
+- name: "[EasyRSA] build-dh"
+  shell:
+    ". ./vars && ./build-dh"
+  args:
+    chdir: "{{ openvpn_directory }}/easy-rsa"
+    creates: "{{ openvpn_keys_directory }}/dh{{rsa.key_size}}.pem"
+
+- name: "[EasyRSA] build-ca"
+  shell:
+    ". ./vars && ./build-ca --batch"
+  args:
+    chdir: "{{ openvpn_directory }}/easy-rsa"
+    creates: "{{ openvpn_keys_directory }}/ca.crt"
+
+- name: "[EasyRSA] build-key-server"
+  shell:
+    ". ./vars && ./build-key-server --batch {{ openvpn_server_name }}"
+  args:
+    chdir: "{{ openvpn_directory }}/easy-rsa"
+    creates: "{{ openvpn_keys_directory }}/{{ openvpn_server_name }}.crt"
+
+- name: "[EasyRSA] build-key"
+  shell:
+    ". ./vars && KEY_EMAIL={{ item.email }} ./build-key --batch {{ item.client }}"
+  args:
+    chdir: "{{ openvpn_directory }}/easy-rsa"
+    creates: "{{ openvpn_keys_directory }}/{{ item.client }}.crt"
+  with_items: "{{ openvpn_clients }}"
+  register: clientkeys
+  tags: [clients]
+
+- name: "Create Client config"
+  template:
+    src: etc/openvpn/client.conf
+    dest: "{{ openvpn_keys_directory }}/{{ item.client }}.conf"
+  with_items: "{{ openvpn_clients }}"
+  register: configs
+  tags: [clients]
+
+- name: Create ZIP for client
+  shell:
+    "zip {{ item.client }} ca.crt {{ item.client }}.key {{ item.client }}.crt {{ item.client }}.conf"
+  args:
+    chdir: "{{ openvpn_keys_directory }}"
+    # creates: "{{ openvpn_keys_directory }}/{{ item.client }}.zip"
+  with_items: "{{ openvpn_clients }}"
+  when: configs.changed or clientkeys.changed
+  register: zips
+  tags: [clients]
+
+- name: Download ZIP
+  fetch:
+    src: "{{ openvpn_keys_directory }}/{{ item.client }}.zip"
+    dest: "./keys/"
+    flat: yes
+  with_items: "{{ openvpn_clients }}"
+  when: zips.changed
+  tags: [clients]

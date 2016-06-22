@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: arogarth
+  description: OpenVPN Installation and managemengt
+  license: MIT
+  min_ansible_version: 1.9
+  platforms:
+  - name: Ubuntu
+    versions:
+    - all
+   name: Debian
+    versions:
+    - all
+  categories:
+  - networking
+  - system
+dependencies: []
+  

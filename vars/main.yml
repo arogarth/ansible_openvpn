@@ -1,0 +1,5 @@
+---
+# vars file for arogarth.openvpn
+
+openvpn_version: 2.1.1
+openvpn_download_url: "http://swupdate.openvpn.org/as/openvpn-as-2.1.1-Ubuntu14.amd_64.deb"

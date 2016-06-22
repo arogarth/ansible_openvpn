@@ -1,0 +1,5 @@
+---
+# handlers file for arogarth.openvpn
+
+- name: restart openvpn
+  service: name=openvpn state=restarted
